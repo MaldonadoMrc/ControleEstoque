@@ -1,0 +1,45 @@
+{% extends "dashboard_base.html" %}
+
+{# O título agora é dinâmico, mostrando o nome do produto #}
+{% block dashboard_title %}Editar Produto: {{ produto.nome }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-body">
+        {# O formulário é exatamente o mesmo do adicionar_produto.html #}
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.nome.label(class="form-label") }}
+                {% if form.nome.errors %}
+                    {{ form.nome(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.nome.errors %}<span>{{ error }}</span>{% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.nome(class="form-control") }}
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.descricao.label(class="form-label") }}
+                {{ form.descricao(class="form-control", rows=4) }}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.preco.label(class="form-label") }}
+                    {{ form.preco(class="form-control") }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.quantidade.label(class="form-label") }}
+                    {{ form.quantidade(class="form-control") }}
+                </div>
+            </div>
+
+            {{ form.enviar(class="btn btn-primary") }}
+        </form>
+    </div>
+</div>
+{% endblock %}

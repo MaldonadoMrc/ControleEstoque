@@ -1,0 +1,102 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Gerenciamento de Usuários{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4">Usuários Cadastrados</h2>
+    <a href="{{ url_for('main.adicionar_usuario_admin') }}" class="btn btn-primary">Adicionar Novo Usuário</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if usuarios %}
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Nome</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Função</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <th scope="row">{{ usuario.id }}</th>
+                        <td>{{ usuario.nome }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ usuario.funcao.nome }}</span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-alterar-funcao"data-bs-toggle="modal"data-bs-target="#alterarFuncaoModal"data-usuario-id="{{ usuario.id }}"data-usuario-nome="{{ usuario.nome }}"> Alterar Função</button>
+                            <a href="#" class="btn btn-sm btn-outline-warning">Resetar Senha</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center p-4">
+                <p class="mb-0">Nenhum usuário encontrado.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+<div class="modal fade" id="alterarFuncaoModal" tabindex="-1" aria-labelledby="alterarFuncaoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="alterarFuncaoModalLabel">Alterar Função</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="formAlterarFuncao" method="POST" action="">
+        <div class="modal-body">
+          <p>Alterando a função de: <strong id="nomeUsuarioModal"></strong></p>
+          {# Instanciamos o formulário aqui para renderizar os campos #}
+
+          {{ form_alterar_funcao.hidden_tag() }}
+          <div class="mb-3">
+              {{ form_alterar_funcao.funcao.label(class="form-label") }}
+              {{ form_alterar_funcao.funcao(class="form-select") }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          {{ form_alterar_funcao.submit(class="btn btn-primary") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+// Pega a referência do modal
+const alterarFuncaoModal = document.getElementById('alterarFuncaoModal');
+
+// Adiciona um evento que é disparado TODA VEZ que o modal for aberto
+alterarFuncaoModal.addEventListener('show.bs.modal', function (event) {
+  // Pega o botão que acionou o modal
+  const button = event.relatedTarget;
+
+  // Extrai os dados dos atributos data-* do botão
+  const usuarioId = button.getAttribute('data-usuario-id');
+  const usuarioNome = button.getAttribute('data-usuario-nome');
+
+  // Pega os elementos dentro do modal que vamos atualizar
+  const modalTitle = alterarFuncaoModal.querySelector('.modal-title');
+  const nomeUsuarioSpan = document.getElementById('nomeUsuarioModal');
+  const formAlterarFuncao = document.getElementById('formAlterarFuncao');
+
+  // Atualiza o conteúdo do modal com os dados do usuário específico
+  modalTitle.textContent = 'Alterar Função de ' + usuarioNome;
+  nomeUsuarioSpan.textContent = usuarioNome;
+  
+  // ATUALIZA A URL DO FORMULÁRIO DINAMICAMENTE!
+  // O url_for gera um protótipo da URL, e nós substituímos o '0' pelo ID real.
+  const actionUrl = "{{ url_for('main.alterar_funcao_usuario', usuario_id=0) }}".replace('0', usuarioId);
+  formAlterarFuncao.action = actionUrl;
+});
+</script>
+{% endblock %}

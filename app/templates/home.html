@@ -1,0 +1,80 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Dashboard de Controle{% endblock %}
+
+{% block dashboard_content %}
+{# --- LINHA DE CARDS DE ESTATÍSTICAS PRINCIPAIS --- #}
+<div class="row">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Produtos Distintos</h5>
+                <p class="card-text fs-2 fw-bold">{{ total_produtos_distintos }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <h5 class="card-title">Itens em Estoque</h5>
+                <p class="card-text fs-2 fw-bold">{{ total_itens_estoque }}</p>
+            </div>
+        </div>
+    </div>
+    
+    {# Mostra o valor total apenas para Admin ou Gerente #}
+    {% if current_user.funcao.nome in ['Admin', 'Gerente'] %}
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <h5 class="card-title">Valor Total do Estoque</h5>
+                <p class="card-text fs-2 fw-bold">R$ {{ "%.2f"|format(valor_total_estoque|float) }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Mostra o total de usuários apenas para Admin #}
+    {% if current_user.funcao.nome == 'Admin' %}
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card text-white bg-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Usuários Cadastrados</h5>
+                <p class="card-text fs-2 fw-bold">{{ total_usuarios }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{# --- LINHA PARA ATIVIDADES RECENTES E ALERTAS --- #}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                Alerta de Estoque Baixo (Top 5)
+            </div>
+            <div class="card-body">
+                {% if produtos_baixo_estoque %}
+                    <ul class="list-group list-group-flush">
+                        {% for produto in produtos_baixo_estoque %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('main.editar_produto', produto_id=produto.id) }}">{{ produto.nome }}</a>
+                            <span class="badge 
+                                {% if produto.quantidade == 0 %} bg-danger
+                                {% elif produto.quantidade <= 10 %} bg-warning text-dark
+                                {% else %} bg-info
+                                {% endif %} rounded-pill">
+                                {{ produto.quantidade }} em estoque
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Nenhum produto cadastrado.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
