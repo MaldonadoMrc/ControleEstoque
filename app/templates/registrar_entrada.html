@@ -1,0 +1,43 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Registrar Entrada no Estoque{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">
+            Registrando entrada para: <span class="text-primary">{{ produto.nome }}</span>
+        </h5>
+        <p class="card-text">
+            Estoque atual: <strong>{{ produto.quantidade }}</strong> unidade(s).
+        </p>
+        <hr>
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="row align-items-end">
+                <div class="col-md-6 mb-3">
+                    {{ form.quantidade.label(class="form-label") }}
+                    {% if form.quantidade.errors %}
+                        {{ form.quantidade(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.quantidade.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.quantidade(class="form-control") }}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.submit(class="btn btn-success w-100") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-sm btn-outline-secondary">Voltar para a lista de produtos</a>
+</div>
+{% endblock %}

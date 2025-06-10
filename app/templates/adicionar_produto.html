@@ -22,6 +22,23 @@
                 {% endif %}
             </div>
 
+            <!-- 
+                <<< CAMPO DE SELEÇÃO DE FORNECEDOR ADICIONADO AQUI >>>
+                Colocamos o campo de fornecedor logo após o nome do produto.
+                Ele é renderizado como um menu suspenso (select).
+            -->
+            <div class="mb-3">
+                {{ form.fornecedor.label(class="form-label") }}
+                {% if form.fornecedor.errors %}
+                    {{ form.fornecedor(class="form-select is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.fornecedor.errors %}<span>{{ error }}</span>{% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.fornecedor(class="form-select") }}
+                {% endif %}
+            </div>
+
             <div class="mb-3">
                 {{ form.descricao.label(class="form-label") }}
                 {{ form.descricao(class="form-control", rows=4) }}

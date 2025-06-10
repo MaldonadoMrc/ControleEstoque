@@ -12,7 +12,7 @@
 <main class="d-flex flex-nowrap">
     <div class="d-flex flex-column flex-shrink-0 p-3 sidebar-custom">
         <a href="{{ url_for('main.home') }}" class="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom">
-            <img src="/static/images/autopecas.ico" alt="Bootstrap" width="65" height="65">
+            <img src="/static/images/autopecas.ico" alt="Ícone de um motor de carro" width="65" height="65">
             <span class="fs-5 fw-semibold">Ipê Peças Usadas</span>
         </a>
         <ul class="list-unstyled ps-0">
@@ -39,6 +39,24 @@
                     </ul>
                 </div>
             </li>
+
+            <!-- 
+                <<< NOVO MENU DE FORNECEDORES ADICIONADO AQUI >>>
+                Adicionamos este novo item na lista principal `<ul>` para criar
+                a seção de gerenciamento de fornecedores.
+            -->
+            <li class="mb-1">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#fornecedores-collapse" aria-expanded="false">
+                    Fornecedores
+                </button>
+                <div class="collapse" id="fornecedores-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li><a href="{{ url_for('main.listar_fornecedores') }}" class="link-dark rounded">Listar Fornecedores</a></li>
+                        <li><a href="{{ url_for('main.adicionar_fornecedor') }}" class="link-dark rounded">Adicionar Fornecedor</a></li>
+                    </ul>
+                </div>
+            </li>
+
             <li class="border-top my-3"></li>
             {% if current_user.funcao.nome == 'Admin' %}
             <li class="mb-1">
@@ -68,6 +86,16 @@
     <div class="b-example-divider b-example-vr"></div>
 
     <div class="container-fluid p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         {% block dashboard_content %}{% endblock %}
     </div>
 </main>

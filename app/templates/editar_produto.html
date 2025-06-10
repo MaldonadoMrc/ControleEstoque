@@ -1,12 +1,10 @@
 {% extends "dashboard_base.html" %}
 
-{# O título agora é dinâmico, mostrando o nome do produto #}
 {% block dashboard_title %}Editar Produto: {{ produto.nome }}{% endblock %}
 
 {% block dashboard_content %}
 <div class="card">
     <div class="card-body">
-        {# O formulário é exatamente o mesmo do adicionar_produto.html #}
         <form method="POST" action="" novalidate>
             {{ form.hidden_tag() }}
 
@@ -23,6 +21,18 @@
             </div>
 
             <div class="mb-3">
+                {{ form.fornecedor.label(class="form-label") }}
+                {% if form.fornecedor.errors %}
+                    {{ form.fornecedor(class="form-select is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.fornecedor.errors %}<span>{{ error }}</span>{% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.fornecedor(class="form-select") }}
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
                 {{ form.descricao.label(class="form-label") }}
                 {{ form.descricao(class="form-control", rows=4) }}
             </div>
@@ -31,10 +41,6 @@
                 <div class="col-md-6 mb-3">
                     {{ form.preco.label(class="form-label") }}
                     {{ form.preco(class="form-control") }}
-                </div>
-                <div class="col-md-6 mb-3">
-                    {{ form.quantidade.label(class="form-label") }}
-                    {{ form.quantidade(class="form-control") }}
                 </div>
             </div>
 

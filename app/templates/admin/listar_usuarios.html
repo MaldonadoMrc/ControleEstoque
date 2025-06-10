@@ -92,7 +92,6 @@ alterarFuncaoModal.addEventListener('show.bs.modal', function (event) {
   modalTitle.textContent = 'Alterar Função de ' + usuarioNome;
   nomeUsuarioSpan.textContent = usuarioNome;
   
-  // ATUALIZA A URL DO FORMULÁRIO DINAMICAMENTE!
   // O url_for gera um protótipo da URL, e nós substituímos o '0' pelo ID real.
   const actionUrl = "{{ url_for('main.alterar_funcao_usuario', usuario_id=0) }}".replace('0', usuarioId);
   formAlterarFuncao.action = actionUrl;

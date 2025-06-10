@@ -37,22 +37,25 @@
                     {% for produto in produtos %}
                     <tr>
                         <th scope="row">{{ produto.id }}</th>
-                        <td>{{ produto.nome }}</td>
+                        
+                            <a href="{{ url_for('main.historico_produto', produto_id=produto.id) }}" title="Ver Histórico de {{ produto.nome }}">
+                                {{ produto.nome }}
+                            </a>
+                        </td>
+
                         <td>R$ {{ "%.2f"|format(produto.preco) }}</td>
                         <td>{{ produto.quantidade }}</td>
-                    <td>
-                        {# Inicia a verificação de permissão aqui #}
-                        {% if current_user.id == produto.usuario_id or current_user.funcao.nome == 'Admin' %}
-                        <a href="{{ url_for('main.editar_produto', produto_id=produto.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-        
-                        <form action="{{ url_for('main.deletar_produto', produto_id=produto.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" 
-                        onclick="return confirm('Tem certeza que deseja excluir este produto?');">Deletar</button>
-                    </form>
-
-                    {% endif %}
-                    {# Termina a verificação de permissão #}
-                </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#movimentacaoModal" data-produto-id="{{ produto.id }}" data-produto-nome="{{ produto.nome }}">
+                                Movimentar
+                            </button>
+                            {% if current_user.id == produto.usuario_id or current_user.funcao.nome == 'Admin' %}
+                            <a href="{{ url_for('main.editar_produto', produto_id=produto.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            <form action="{{ url_for('main.deletar_produto', produto_id=produto.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja excluir este produto?');">Deletar</button>
+                            </form>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -68,31 +71,66 @@
 <div class="mt-4 d-flex justify-content-center">
     <nav aria-label="Paginação de Produtos">
       <ul class="pagination">
-
-        {# Botão 'Anterior' - Desabilitado se estiver na primeira página #}
         <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
           <a class="page-link" href="{{ url_for('main.listar_produtos', page=pagination.prev_num) }}">Anterior</a>
         </li>
-
-        {# Links para os números das páginas #}
         {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
           {% if p %}
-            {# Marca a página atual como 'active' #}
             <li class="page-item {% if pagination.page == p %}active{% endif %}">
               <a class="page-link" href="{{ url_for('main.listar_produtos', page=p) }}">{{ p }}</a>
             </li>
           {% else %}
-            {# Adiciona '...' para páginas distantes #}
             <li class="page-item disabled"><span class="page-link">…</span></li>
           {% endif %}
         {% endfor %}
-
-        {# Botão 'Próxima' - Desabilitado se estiver na última página #}
         <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
           <a class="page-link" href="{{ url_for('main.listar_produtos', page=pagination.next_num) }}">Próxima</a>
         </li>
-
       </ul>
     </nav>
 </div>
+
+<div class="modal fade" id="movimentacaoModal" tabindex="-1" aria-labelledby="movimentacaoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="movimentacaoModalLabel">Registrar Movimentação para: </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="formMovimentacao" method="POST" action="">
+        <div class="modal-body">
+          {{ form_movimentacao.hidden_tag() }}
+          <div class="mb-3">
+              {{ form_movimentacao.quantidade.label(class="form-label") }}
+              {{ form_movimentacao.quantidade(class="form-control") }}
+          </div>
+          <div class="mb-3">
+              {{ form_movimentacao.motivo.label(class="form-label") }}
+              {{ form_movimentacao.motivo(class="form-control") }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          {{ form_movimentacao.submit_saida(class="btn btn-warning") }}
+          {{ form_movimentacao.submit_entrada(class="btn btn-primary") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const movimentacaoModal = document.getElementById('movimentacaoModal');
+movimentacaoModal.addEventListener('show.bs.modal', function (event) {
+  const button = event.relatedTarget;
+  const produtoId = button.getAttribute('data-produto-id');
+  const produtoNome = button.getAttribute('data-produto-nome');
+  const modalTitle = movimentacaoModal.querySelector('.modal-title');
+  const formMovimentacao = document.getElementById('formMovimentacao');
+  modalTitle.textContent = 'Registrar Movimentação para: ' + produtoNome;
+  const actionUrl = "{{ url_for('main.movimentar_estoque', produto_id=0) }}".replace('0', produtoId);
+  formMovimentacao.action = actionUrl;
+});
+</script>
+
 {% endblock %}

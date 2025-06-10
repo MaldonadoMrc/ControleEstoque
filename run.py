@@ -1,14 +1,12 @@
+# run.py
+
+# A única coisa que este arquivo precisa fazer é importar
+# a função de fábrica 'create_app' e criar uma instância do app.
 from app import create_app
-from app import db
-from app.models import db
+
 app = create_app()
 
-
-
-def init_db():
-    db.init_app(app)
-    db.app = app
-    db.create_all()
-
+# Esta condição garante que o servidor só rode quando
+# executamos o arquivo diretamente (python run.py)
 if __name__ == "__main__":
     app.run(debug=True)

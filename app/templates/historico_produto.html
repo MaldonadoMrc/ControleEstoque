@@ -1,0 +1,60 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}
+    Histórico de Movimentações
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="card-title mb-0">Histórico: {{ produto.nome }}</h4>
+            <p class="card-subtitle text-muted mb-0">ID do Produto: {{ produto.id }} | Estoque Atual: {{ produto.quantidade }}</p>
+        </div>
+        <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-secondary">
+            &larr; Voltar para a Lista
+        </a>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Data e Hora (Local)</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Quantidade</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col">Usuário</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimentacao in movimentacoes %}
+                <tr>
+                    <!-- 
+                        <<< MUDANÇA AQUI >>>
+                        Substituímos o .strftime() pelo nosso filtro customizado.
+                        É mais limpo, mais legível e centraliza a lógica de conversão.
+                    -->
+                    <td>{{ movimentacao.data_hora | hora_local }}</td>
+                    <td>
+                        {% if movimentacao.tipo == 'Entrada' %}
+                            <span class="fw-bold text-success">{{ movimentacao.tipo }}</span>
+                        {% else %}
+                            <span class="fw-bold text-danger">{{ movimentacao.tipo }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ movimentacao.quantidade }}</td>
+                    <td>{{ movimentacao.motivo }}</td>
+                    <td>{{ movimentacao.usuario.nome }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Nenhuma movimentação registrada para este produto ainda.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
