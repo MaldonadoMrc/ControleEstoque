@@ -84,7 +84,29 @@
                     </ul>
                 </div>
             </li>
-        
+
+             <li class="mb-1">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#os-collapse" aria-expanded="false">
+                    Vendas
+                </button>
+                <div class="collapse" id="os-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li><a href="{{ url_for('main.listar_os') }}" class="link-dark rounded">Nova Venda</a></li>
+                        <li><a href="{{ url_for('main.adicionar_os') }}" class="link-dark rounded">Relatorios</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="mb-1">
+    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#vendas-collapse" aria-expanded="false">
+        Vendas
+            </button>
+            <div class="collapse" id="vendas-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    <li><a href="{{ url_for('main.registrar_venda') }}" class="link-dark rounded">Registrar Venda</a></li>
+                </ul>
+            </div>
+            </li>
             <li class="border-top my-3"></li>
         
             {% if current_user.funcao.nome == 'Admin' %}

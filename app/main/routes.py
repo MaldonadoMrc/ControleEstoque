@@ -7,6 +7,10 @@ from .forms import ProdutoForm
 from app.decorators import permission_required
 from sqlalchemy import func
 from .forms import ProdutoForm, AdminUsuarioForm, AlterarFuncaoForm, MovimentacaoForm, FornecedorForm, ClienteForm, OrdemServicoForm
+from flask import jsonify # Adicione jsonify
+from .forms import VendaForm # Adicione VendaForm
+from app.models import Venda, VendaItem # Adicione os novos models
+import json # Adicione a biblioteca json
 
 
 
@@ -413,3 +417,74 @@ def editar_os(os_id):
     return render_template('gerenciar_os.html', 
                            form=form, 
                            title=f'Editar Ordem de Serviço #{os_obj.id}')
+
+# API para a busca de produtos em tempo real (usada pelo JavaScript)
+@main_bp.route('/api/produtos')
+@login_required
+def api_produtos():
+    termo_busca = request.args.get('termo', '')
+    if not termo_busca:
+        return jsonify([])
+
+    produtos = Produto.query.filter(
+        Produto.nome.ilike(f'%{termo_busca}%'),
+        Produto.quantidade > 0 # Apenas produtos com estoque
+    ).limit(10).all()
+
+    # Converte os objetos produto em um formato que o JavaScript entende (JSON)
+    lista_produtos = [
+        {'id': p.id, 'nome': p.nome, 'preco': p.preco, 'quantidade': p.quantidade}
+        for p in produtos
+    ]
+    return jsonify(lista_produtos)
+
+# Rota para a página de vendas
+@main_bp.route('/venda/registrar', methods=['GET', 'POST'])
+@login_required
+@permission_required('Admin', 'Gerente') # Defina quem pode vender
+def registrar_venda():
+    form = VendaForm()
+    if form.validate_on_submit():
+        try:
+            # Pega a string JSON do formulário e converte de volta para uma lista Python
+            itens_do_carrinho = json.loads(form.itens_venda.data)
+
+            if not itens_do_carrinho:
+                flash('O carrinho não pode estar vazio para finalizar a venda.', 'warning')
+                return redirect(url_for('main.registrar_venda'))
+
+            valor_total_venda = 0
+            nova_venda = Venda(usuario_id=current_user.id, valor_total=0) # Cria a venda
+            db.session.add(nova_venda)
+
+            for item_carrinho in itens_do_carrinho:
+                produto = Produto.query.get(item_carrinho['id'])
+                quantidade_vendida = int(item_carrinho['quantidade'])
+
+                if not produto or produto.quantidade < quantidade_vendida:
+                    raise Exception(f"Estoque insuficiente para o produto {item_carrinho['nome']}.")
+
+                # Abate do estoque
+                produto.quantidade -= quantidade_vendida
+
+                # Cria o item da venda
+                novo_item_venda = VendaItem(
+                    venda=nova_venda,
+                    produto_id=produto.id,
+                    quantidade=quantidade_vendida,
+                    preco_unitario=produto.preco
+                )
+                valor_total_venda += quantidade_vendida * produto.preco
+                db.session.add(novo_item_venda)
+
+            # Atualiza o valor total na venda
+            nova_venda.valor_total = valor_total_venda
+            db.session.commit()
+            flash('Venda registrada com sucesso!', 'success')
+            return redirect(url_for('main.home'))
+
+        except Exception as e:
+            db.session.rollback() # Desfaz tudo se der algum erro
+            flash(f'Erro ao processar a venda: {e}', 'danger')
+
+    return render_template('registrar_venda.html', title='Registrar Venda', form=form)

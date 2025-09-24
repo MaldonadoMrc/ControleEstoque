@@ -6,6 +6,8 @@ from wtforms_sqlalchemy.fields import QuerySelectField
 from app.models import Funcao, Fornecedor, Estado, Cliente, Usuario
 from sqlalchemy import func
 from datetime import datetime
+from wtforms import HiddenField
+
 class FornecedorForm(FlaskForm):
     nome = StringField('Nome da Empresa', validators=[DataRequired()])
     contato_nome = StringField('Nome do Contato')
@@ -162,6 +164,11 @@ class OrdemServicoForm(FlaskForm):
     
     submit = SubmitField('Salvar Ordem de Serviço')
 
+
+
+class VendaForm(FlaskForm):
+    itens_venda = HiddenField('Itens da Venda', validators=[DataRequired()])
+    submit = SubmitField('Finalizar Venda')
 
 
 

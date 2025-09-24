@@ -133,3 +133,21 @@ class OrdemServico(db.Model):
 
     def __repr__(self):
         return f'<OrdemServico id={self.id}>'
+    
+class Venda(db.Model):
+    __tablename__ = 'vendas'
+    id = db.Column(db.Integer, primary_key=True)
+    data_hora = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    valor_total = db.Column(db.Float, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    usuario = db.relationship('Usuario', backref=db.backref('vendas', lazy=True))
+
+class VendaItem(db.Model):
+    __tablename__ = 'venda_itens'
+    id = db.Column(db.Integer, primary_key=True)
+    venda_id = db.Column(db.Integer, db.ForeignKey('vendas.id'), nullable=False)
+    venda = db.relationship('Venda', backref=db.backref('itens', lazy=True))
+    produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
+    produto = db.relationship('Produto')
+    quantidade = db.Column(db.Integer, nullable=False)
+    preco_unitario = db.Column(db.Float, nullable=False) # Preço no momento da venda

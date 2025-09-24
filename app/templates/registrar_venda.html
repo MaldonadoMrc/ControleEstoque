@@ -1,0 +1,203 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Registrar Nova Venda{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">1. Adicionar Produtos ao Carrinho</h5>
+                <hr>
+
+                <div class="mb-3">
+                    <label for="buscaProduto" class="form-label">Buscar Produto por Nome</label>
+                    <input type="text" id="buscaProduto" class="form-control" placeholder="Digite para buscar...">
+                    <div id="listaResultados" class="list-group mt-2"></div>
+                </div>
+
+                <div id="detalhesProduto" class="d-none">
+                    <h6>Produto Selecionado: <span id="nomeProdutoSelecionado" class="text-primary"></span></h6>
+                    <p class="mb-1">Estoque atual: <strong id="estoqueAtual"></strong></p>
+                    <p>Preço unitário: R$ <strong id="precoUnitario"></strong></p>
+                    
+                    <div class="row align-items-end">
+                        <div class="col-sm-4">
+                            <label for="quantidadeVenda" class="form-label">Quantidade</label>
+                            <input type="number" id="quantidadeVenda" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="col-sm-8">
+                            <button id="btnAdicionarAoCarrinho" class="btn btn-success w-100">Adicionar ao Carrinho &rarr;</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">2. Resumo da Venda</h5>
+                <hr>
+                
+                <form id="formVenda" method="POST" action="{{ url_for('main.registrar_venda') }}">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="itens_venda" id="itens_venda_input">
+
+                    <ul id="carrinhoLista" class="list-group mb-3">
+                        <li id="carrinhoVazio" class="list-group-item text-center text-muted">
+                            O carrinho está vazio.
+                        </li>
+                    </ul>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Total:</h6>
+                        <h4 id="valorTotal" class="mb-0 fw-bold">R$ 0.00</h4>
+                    </div>
+                    
+                    <hr>
+
+                    <div class="d-grid">
+                        <button type="submit" id="btnFinalizarVenda" class="btn btn-primary btn-lg" disabled>Finalizar Venda</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Referências aos elementos do DOM
+    const buscaInput = document.getElementById('buscaProduto');
+    const resultadosDiv = document.getElementById('listaResultados');
+    const detalhesProdutoDiv = document.getElementById('detalhesProduto');
+    const quantidadeInput = document.getElementById('quantidadeVenda');
+    const btnAdicionar = document.getElementById('btnAdicionarAoCarrinho');
+    const carrinhoLista = document.getElementById('carrinhoLista');
+    const carrinhoVazio = document.getElementById('carrinhoVazio');
+    const valorTotalEl = document.getElementById('valorTotal');
+    const btnFinalizarVenda = document.getElementById('btnFinalizarVenda');
+    const formVenda = document.getElementById('formVenda');
+    const itensVendaInput = document.getElementById('itens_venda_input');
+
+    let produtoSelecionado = null;
+    let carrinho = []; // Array para guardar os itens da venda
+
+    // Função para buscar produtos dinamicamente
+    buscaInput.addEventListener('keyup', async function () {
+        const termo = buscaInput.value;
+        if (termo.length < 2) {
+            resultadosDiv.innerHTML = '';
+            return;
+        }
+        // No seu backend, você precisará criar uma rota /api/produtos?termo=...
+        const response = await fetch(`/api/produtos?termo=${termo}`);
+        const produtos = await response.json();
+        
+        resultadosDiv.innerHTML = '';
+        produtos.forEach(p => {
+            const item = document.createElement('a');
+            item.href = '#';
+            item.className = 'list-group-item list-group-item-action';
+            item.textContent = `${p.nome} (Estoque: ${p.quantidade})`;
+            item.dataset.produto = JSON.stringify(p); // Guarda o objeto produto
+            resultadosDiv.appendChild(item);
+        });
+    });
+
+    // Função para selecionar um produto da lista de busca
+    resultadosDiv.addEventListener('click', function (e) {
+        if (e.target && e.target.tagName === 'A') {
+            e.preventDefault();
+            produtoSelecionado = JSON.parse(e.target.dataset.produto);
+            
+            document.getElementById('nomeProdutoSelecionado').textContent = produtoSelecionado.nome;
+            document.getElementById('estoqueAtual').textContent = produtoSelecionado.quantidade;
+            document.getElementById('precoUnitario').textContent = produtoSelecionado.preco.toFixed(2);
+            quantidadeInput.max = produtoSelecionado.quantidade;
+            
+            detalhesProdutoDiv.classList.remove('d-none');
+            resultadosDiv.innerHTML = '';
+            buscaInput.value = '';
+        }
+    });
+
+    // Função para adicionar o produto selecionado ao carrinho
+    btnAdicionar.addEventListener('click', function() {
+        if (!produtoSelecionado) return;
+
+        const quantidade = parseInt(quantidadeInput.value);
+        if (quantidade <= 0 || quantidade > produtoSelecionado.quantidade) {
+            alert('Quantidade inválida ou maior que o estoque disponível.');
+            return;
+        }
+
+        // Verifica se o produto já está no carrinho
+        const itemExistente = carrinho.find(item => item.id === produtoSelecionado.id);
+        if (itemExistente) {
+            itemExistente.quantidade += quantidade;
+        } else {
+            carrinho.push({
+                id: produtoSelecionado.id,
+                nome: produtoSelecionado.nome,
+                preco: produtoSelecionado.preco,
+                quantidade: quantidade
+            });
+        }
+        
+        atualizarCarrinho();
+        produtoSelecionado = null;
+        detalhesProdutoDiv.classList.add('d-none');
+    });
+
+    // Função para renderizar o carrinho na tela
+    function atualizarCarrinho() {
+        carrinhoLista.innerHTML = '';
+        let total = 0;
+
+        if (carrinho.length === 0) {
+            carrinhoLista.appendChild(carrinhoVazio);
+            btnFinalizarVenda.disabled = true;
+        } else {
+            carrinho.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `
+                    <div>
+                        ${item.nome}
+                        <small class="d-block text-muted">${item.quantidade} x R$ ${item.preco.toFixed(2)}</small>
+                    </div>
+                    <div>
+                        <span class="fw-bold me-3">R$ ${(item.quantidade * item.preco).toFixed(2)}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-remover" data-index="${index}">&times;</button>
+                    </div>
+                `;
+                carrinhoLista.appendChild(li);
+                total += item.quantidade * item.preco;
+            });
+            btnFinalizarVenda.disabled = false;
+        }
+        valorTotalEl.textContent = `R$ ${total.toFixed(2)}`;
+    }
+
+    // Função para remover um item do carrinho
+    carrinhoLista.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('btn-remover')) {
+            const index = e.target.dataset.index;
+            carrinho.splice(index, 1);
+            atualizarCarrinho();
+        }
+    });
+
+    // Prepara o formulário para envio
+    formVenda.addEventListener('submit', function() {
+        // Converte o array do carrinho em uma string JSON para enviar ao backend
+        itensVendaInput.value = JSON.stringify(carrinho);
+    });
+});
+</script>
+{% endblock %}
