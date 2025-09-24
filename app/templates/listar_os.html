@@ -1,0 +1,48 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Ordens de Serviço{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4">Ordens de Serviço</h2>
+    <a href="{{ url_for('main.adicionar_os') }}" class="btn btn-primary">Abrir Nova OS</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if ordens %}
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">#OS</th>
+                        <th scope="col">Abertura</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Equipamento</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for os in ordens %}
+                    <tr>
+                        <th scope="row">{{ os.id }}</th>
+                        <td>{{ os.data_abertura | hora_local }}</td>
+                        <td>{{ os.cliente.nome }}</td>
+                        <td>{{ os.equipamento }}</td>
+                        <td><span class="badge bg-info">{{ os.status }}</span></td>
+                        <td>
+                            <a href="{{ url_for('main.editar_os', os_id=os.id) }}" class="btn btn-sm btn-outline-secondary">Ver / Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center p-4">
+                <p class="mb-0">Nenhuma Ordem de Serviço cadastrada.</p>
+                <p><a href="{{ url_for('main.adicionar_os') }}">Clique aqui para abrir a primeira.</a></p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

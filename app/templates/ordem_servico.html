@@ -1,0 +1,76 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}{{ title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ title }}</h5>
+        <hr>
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+
+            <fieldset class="mb-4">
+                <legend class="h6">Dados Principais</legend>
+                <div class="mb-3">
+                    {{ form.nome.label(class="form-label") }}
+                    {{ form.nome(class="form-control") }}
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.contato_nome.label(class="form-label") }}
+                        {{ form.contato_nome(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.telefone.label(class="form-label") }}
+                        {{ form.telefone(class="form-control") }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control") }}
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend class="h6">Endereço</legend>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.cep.label(class="form-label") }}
+                        {{ form.cep(class="form-control") }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {{ form.rua.label(class="form-label") }}
+                    {{ form.rua(class="form-control") }}
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.numero.label(class="form-label") }}
+                        {{ form.numero(class="form-control") }}
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        {{ form.bairro.label(class="form-label") }}
+                        {{ form.bairro(class="form-control") }}
+                    </div>
+                </div>
+                 <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.cidade.label(class="form-label") }}
+                        {{ form.cidade(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.estado.label(class="form-label") }}
+                        {{ form.estado(class="form-select") }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('main.listar_fornecedores') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

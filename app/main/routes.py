@@ -2,11 +2,13 @@ from flask import render_template, redirect, url_for, flash, abort, request
 from flask_login import login_required, current_user
 from . import main_bp
 from app import db
-from app.models import Produto, Usuario, MovimentacaoEstoque, Fornecedor
+from app.models import Produto, Usuario, MovimentacaoEstoque, Fornecedor, Cliente, OrdemServico
 from .forms import ProdutoForm
 from app.decorators import permission_required
 from sqlalchemy import func
-from .forms import ProdutoForm, AdminUsuarioForm, AlterarFuncaoForm, MovimentacaoForm, FornecedorForm
+from .forms import ProdutoForm, AdminUsuarioForm, AlterarFuncaoForm, MovimentacaoForm, FornecedorForm, ClienteForm, OrdemServicoForm
+
+
 
 
 def verificar_permissao(produto):
@@ -47,7 +49,6 @@ def listar_produtos():
     page = request.args.get('page', 1, type=int)
     termo_busca = request.args.get('termo_busca', '')
     query_base = Produto.query.options(db.joinedload(Produto.fornecedor))
-    query_base = Produto.query
     if termo_busca:
         query_base = query_base.filter(Produto.nome.ilike(f'%{termo_busca}%'))
 
@@ -289,3 +290,126 @@ def deletar_fornecedor(fornecedor_id):
     db.session.commit()
     flash(f'Fornecedor "{fornecedor.nome}" excluído com sucesso.', 'success')
     return redirect(url_for('main.listar_fornecedores'))
+
+@main_bp.route('/clientes')
+@login_required
+def listar_clientes():
+    clientes = Cliente.query.order_by(Cliente.nome).all()
+    return render_template('listar_clientes.html', 
+                           clientes=clientes, 
+                           title="Clientes")
+
+@main_bp.route('/cliente/adicionar', methods=['GET', 'POST'])
+@login_required
+@permission_required('Admin, Gerente')
+def adicionar_cliente():
+    form = ClienteForm()
+    if form.validate_on_submit():
+        novo_cliente = Cliente()
+        form.populate_obj(novo_cliente) # metodo populate preenche os dados do form
+        db.session.add(novo_cliente)
+        db.session.commit()
+        flash(f'Cliente "{novo_cliente.nome}" cadastrado com sucesso!', 'success}')
+        return redirect(url_for('main.listar_clientes'))
+    return render_template('gerenciar_cliente.html', 
+                           title='Adicionar Novo Cliente', 
+                           form=form)
+
+@main_bp.route('/cliente/editar/<int:cliente_id>', methods=['GET', 'POST'])
+@login_required
+@permission_required('Admin', 'Gerente')
+def editar_cliente(cliente_id):
+    cliente = Cliente.query.get_or_404(cliente_id)
+    form = ClienteForm(obj=cliente)
+    if form.validate_on_submit():
+        form.populate_obj(cliente)
+        db.session.commit()
+        flash(f'Dados do cliente "{cliente.nome}" atualizados com sucesso!', 'success')
+        return redirect(url_for('main.listar_clientes'))
+    return render_template('gerenciar_cliente.html', 
+                           title='Editar Cliente', 
+                           form=form)
+
+
+@main_bp.route('/cliente/deletar/<int:cliente_id>', methods=['POST'])
+@login_required
+@permission_required('Admin')
+def deletar_cliente(cliente_id):
+    """Processa a exclusão de um cliente."""
+    cliente = Cliente.query.get_or_404(cliente_id)
+    
+    # Regra de negócio: não permitir excluir cliente com OS associada
+    if cliente.ordens_servico.count() > 0:
+        flash(f'Não é possível excluir o cliente "{cliente.nome}", pois ele possui Ordens de Serviço vinculadas.', 'danger')
+        return redirect(url_for('main.listar_clientes'))
+    
+    db.session.delete(cliente)
+    db.session.commit()
+    flash(f'Cliente "{cliente.nome}" excluído com sucesso.', 'success')
+    return redirect(url_for('main.listar_clientes'))
+
+
+# --- ROTAS PARA GERENCIAMENTO DE ORDENS DE SERVIÇO ---
+
+@main_bp.route('/os')
+@login_required
+def listar_os():
+    """Exibe a lista de todas as Ordens de Serviço."""
+    # .options(db.joinedload(...)) é uma otimização para carregar os dados relacionados
+    # de uma vez só, evitando múltiplas queries ao banco.
+    ordens = OrdemServico.query.options(
+        db.joinedload(OrdemServico.cliente), 
+        db.joinedload(OrdemServico.tecnico)
+    ).order_by(OrdemServico.data_abertura.desc()).all()
+    
+    return render_template('listar_os.html', 
+                           ordens=ordens, 
+                           title="Ordens de Serviço")
+
+@main_bp.route('/os/adicionar', methods=['GET', 'POST'])
+@login_required
+@permission_required('Admin', 'Gerente')
+def adicionar_os():
+    """Exibe o formulário e processa o cadastro de uma nova OS."""
+    form = OrdemServicoForm()
+    if form.validate_on_submit():
+        nova_os = OrdemServico()
+        form.populate_obj(nova_os)
+        
+        # Calcula o valor total antes de salvar
+        valor_servico = form.valor_servico.data or 0.0
+        valor_pecas = form.valor_pecas.data or 0.0
+        nova_os.valor_total = valor_servico + valor_pecas
+        
+        db.session.add(nova_os)
+        db.session.commit()
+        flash(f'Ordem de Serviço #{nova_os.id} para o cliente "{nova_os.cliente.nome}" foi aberta com sucesso!', 'success')
+        return redirect(url_for('main.listar_os'))
+        
+    return render_template('gerenciar_os.html', 
+                           form=form, 
+                           title='Abrir Nova Ordem de Serviço')
+
+
+@main_bp.route('/os/editar/<int:os_id>', methods=['GET', 'POST'])
+@login_required
+@permission_required('Admin', 'Gerente')
+def editar_os(os_id):
+    """Exibe o formulário e processa a edição de uma OS existente."""
+    os_obj = OrdemServico.query.get_or_404(os_id)
+    form = OrdemServicoForm(obj=os_obj)
+    
+    if form.validate_on_submit():
+        form.populate_obj(os_obj)
+
+        valor_servico = form.valor_servico.data or 0.0
+        valor_pecas = form.valor_pecas.data or 0.0
+        os_obj.valor_total = valor_servico + valor_pecas
+        
+        db.session.commit()
+        flash(f'Ordem de Serviço #{os_obj.id} atualizada com sucesso!', 'success')
+        return redirect(url_for('main.listar_os'))
+
+    return render_template('gerenciar_os.html', 
+                           form=form, 
+                           title=f'Editar Ordem de Serviço #{os_obj.id}')

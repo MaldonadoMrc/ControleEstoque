@@ -16,9 +16,10 @@
             <span class="fs-5 fw-semibold">Ipê Peças Usadas</span>
         </a>
         <ul class="list-unstyled ps-0">
-            
+        
             <li class="mb-1">
-                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="true">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#home-collapse" aria-expanded="true">
                     Home
                 </button>
                 <div class="collapse show" id="home-collapse">
@@ -27,40 +28,69 @@
                     </ul>
                 </div>
             </li>
-            
+        
             <li class="mb-1">
-                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#produtos-collapse" aria-expanded="false">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#produtos-collapse" aria-expanded="false">
                     Produtos
                 </button>
                 <div class="collapse" id="produtos-collapse">
                     <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                         <li><a href="{{ url_for('main.listar_produtos') }}" class="link-dark rounded">Listar Produtos</a></li>
-                        <li><a href="{{ url_for('main.adicionar_produto') }}" class="link-dark rounded">Adicionar Produto</a></li>
+                        <li><a href="{{ url_for('main.adicionar_produto') }}" class="link-dark rounded">Adicionar Produto</a>
+                        </li>
                     </ul>
                 </div>
             </li>
-
-            <!-- 
-                <<< NOVO MENU DE FORNECEDORES ADICIONADO AQUI >>>
-                Adicionamos este novo item na lista principal `<ul>` para criar
-                a seção de gerenciamento de fornecedores.
-            -->
+        
             <li class="mb-1">
-                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#fornecedores-collapse" aria-expanded="false">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#fornecedores-collapse" aria-expanded="false">
                     Fornecedores
                 </button>
                 <div class="collapse" id="fornecedores-collapse">
                     <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                        <li><a href="{{ url_for('main.listar_fornecedores') }}" class="link-dark rounded">Listar Fornecedores</a></li>
-                        <li><a href="{{ url_for('main.adicionar_fornecedor') }}" class="link-dark rounded">Adicionar Fornecedor</a></li>
+                        <li><a href="{{ url_for('main.listar_fornecedores') }}" class="link-dark rounded">Listar
+                                Fornecedores</a></li>
+                        <li><a href="{{ url_for('main.adicionar_fornecedor') }}" class="link-dark rounded">Adicionar
+                                Fornecedor</a></li>
                     </ul>
                 </div>
             </li>
-
+        
+            <li class="mb-1">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#clientes-collapse" aria-expanded="false">
+                    Clientes
+                </button>
+                <div class="collapse" id="clientes-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li><a href="{{ url_for('main.listar_clientes') }}" class="link-dark rounded">Listar Clientes</a></li>
+                        <li><a href="{{ url_for('main.adicionar_cliente') }}" class="link-dark rounded">Adicionar Cliente</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        
+            <li class="mb-1">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#os-collapse" aria-expanded="false">
+                    Ordens de Serviço
+                </button>
+                <div class="collapse" id="os-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li><a href="{{ url_for('main.listar_os') }}" class="link-dark rounded">Listar OS</a></li>
+                        <li><a href="{{ url_for('main.adicionar_os') }}" class="link-dark rounded">Abrir Nova OS</a></li>
+                    </ul>
+                </div>
+            </li>
+        
             <li class="border-top my-3"></li>
+        
             {% if current_user.funcao.nome == 'Admin' %}
             <li class="mb-1">
-                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#admin-collapse" aria-expanded="false">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#admin-collapse" aria-expanded="false">
                     Administração
                 </button>
                 <div class="collapse" id="admin-collapse">
@@ -70,8 +100,10 @@
                 </div>
             </li>
             {% endif %}
+        
             <li class="mb-1">
-                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+                <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    data-bs-target="#account-collapse" aria-expanded="false">
                     Conta
                 </button>
                 <div class="collapse" id="account-collapse">
@@ -80,6 +112,7 @@
                     </ul>
                 </div>
             </li>
+        
         </ul>
     </div>
 

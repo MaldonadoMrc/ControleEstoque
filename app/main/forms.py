@@ -3,7 +3,7 @@ from wtforms import StringField, TextAreaField, FloatField, IntegerField, Submit
 from wtforms.validators import DataRequired, Length, NumberRange, Email, Optional
 from app.auth.forms import RegistroForm
 from wtforms_sqlalchemy.fields import QuerySelectField
-from app.models import Funcao, Fornecedor, Estado
+from app.models import Funcao, Fornecedor, Estado, Cliente, Usuario
 from sqlalchemy import func
 from datetime import datetime
 class FornecedorForm(FlaskForm):
@@ -101,5 +101,67 @@ class FornecedorForm(FlaskForm):
     
     submit = SubmitField('Salvar Fornecedor')
 
-def query_fornecedores():
-    return Fornecedor.query.order_by(Fornecedor.nome)
+def query_cliente():
+    return Cliente.query.order_by(Cliente.nome)
+
+
+def query_tecnicos():
+    return Usuario.query.order_by(Usuario.nome)
+
+class ClienteForm(FlaskForm):
+    nome = StringField('Nome Completo', validators=[DataRequired()])
+    telefone = StringField('Telefone')
+    email = StringField('Email', validators=[Optional(), Email(message="E-mail inválido.")])
+    cep = StringField('CEP')
+    rua = StringField('Rua')
+    numero = StringField('Numero')
+    bairro = StringField ('Bairro')
+    cidade = StringField('Cidade')
+    estado = QuerySelectField (
+        'Estado',
+        query_factory=query_estados,
+        get_label='nome',
+        allow_blank=True,
+        blank_text='-- Selecione um Estado --'
+
+    )
+    
+    submit = SubmitField('Salvar Cliente')
+
+# Em app/main/forms.py
+
+# ... (outros forms) ...
+
+class OrdemServicoForm(FlaskForm):
+    """Formulário para adicionar e editar Ordens de Serviço."""
+    cliente = QuerySelectField(
+        'Cliente',
+        query_factory=query_cliente,
+        get_label='nome',
+        allow_blank=False,
+        validators=[DataRequired(message="É obrigatório selecionar um cliente.")]
+    )
+    tecnico = QuerySelectField(
+        'Técnico Responsável',
+        query_factory=query_tecnicos,
+        get_label='nome',
+        allow_blank=False,
+        validators=[DataRequired(message="É obrigatório selecionar um técnico.")]
+    )
+    equipamento = StringField('Equipamento', validators=[DataRequired(message="O campo equipamento é obrigatório.")])
+    
+    # GARANTA QUE ESTE CAMPO ESTEJA EXATAMENTE ASSIM
+    descricao_problema = TextAreaField('Descrição do Problema', validators=[DataRequired()])
+    
+    servico_executado = TextAreaField('Serviço Executado')
+    
+    status = StringField('Status', default='Aberta', validators=[DataRequired()])
+    
+    valor_servico = FloatField('Valor do Serviço (R$)', default=0.0, validators=[Optional(), NumberRange(min=0)])
+    valor_pecas = FloatField('Valor das Peças (R$)', default=0.0, validators=[Optional(), NumberRange(min=0)])
+    
+    submit = SubmitField('Salvar Ordem de Serviço')
+
+
+
+

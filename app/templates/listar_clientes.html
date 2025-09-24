@@ -1,0 +1,49 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Gerenciamento de Clientes{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4">Clientes Cadastrados</h2>
+    <a href="{{ url_for('main.adicionar_cliente') }}" class="btn btn-primary">Adicionar Novo Cliente</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if clientes %}
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Nome</th>
+                        <th scope="col">Telefone</th>
+                        <th scope="col">E-mail</th>
+                        <th scope="col">Cidade</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr>
+                        <td>{{ cliente.nome }}</td>
+                        <td>{{ cliente.telefone or 'N/A' }}</td>
+                        <td>{{ cliente.email or 'N/A' }}</td>
+                        <td>{{ cliente.cidade or 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('main.editar_cliente', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            <form action="{{ url_for('main.deletar_cliente', cliente_id=cliente.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja excluir este cliente?');">Deletar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center p-4">
+                <p class="mb-0">Nenhum cliente cadastrado ainda.</p>
+                <p>Que tal <a href="{{ url_for('main.adicionar_cliente') }}">adicionar o primeiro</a>?</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

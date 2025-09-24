@@ -38,6 +38,11 @@
                     <tr>
                         <th scope="row">{{ produto.id }}</th>
                         
+                        <!-- 
+                            <<< MUDANÇA AQUI >>>
+                            O nome do produto agora é um link para a página de histórico.
+                        -->
+                        <td>
                             <a href="{{ url_for('main.historico_produto', produto_id=produto.id) }}" title="Ver Histórico de {{ produto.nome }}">
                                 {{ produto.nome }}
                             </a>

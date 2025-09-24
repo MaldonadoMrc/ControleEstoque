@@ -1,0 +1,64 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}{{ title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ title }}</h5>
+        <hr>
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+
+            <fieldset class="mb-4">
+                <legend class="h6">Dados Iniciais</legend>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.cliente.label(class="form-label") }}
+                        {{ form.cliente(class="form-select") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.tecnico.label(class="form-label") }}
+                        {{ form.tecnico(class="form-select") }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {{ form.equipamento.label(class="form-label") }}
+                    {{ form.equipamento(class="form-control") }}
+                </div>
+                 <div class="mb-3">
+                    {{ form.descricao_problema.label(class="form-label") }}
+                    {{ form.descricao_problema(class="form-control", rows=4) }}
+                </div>
+            </fieldset>
+
+            <fieldset class="mb-4">
+                <legend class="h6">Execução e Valores</legend>
+                <div class="mb-3">
+                    {{ form.servico_executado.label(class="form-label") }}
+                    {{ form.servico_executado(class="form-control", rows=4) }}
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.valor_servico.label(class="form-label") }}
+                        {{ form.valor_servico(class="form-control") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.valor_pecas.label(class="form-label") }}
+                        {{ form.valor_pecas(class="form-control") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-control") }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('main.listar_os') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
