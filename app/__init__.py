@@ -53,7 +53,7 @@ def create_app():
 
     # Importa e registra os Blueprints (conjuntos de rotas)
     # A importação é feita aqui para evitar dependências circulares.
-    from .auth.routes import auth_bp
+    from .auth import auth_bp
     from .main import main_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)

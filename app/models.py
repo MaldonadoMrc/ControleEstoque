@@ -138,9 +138,19 @@ class Venda(db.Model):
     __tablename__ = 'vendas'
     id = db.Column(db.Integer, primary_key=True)
     data_hora = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    valor_total = db.Column(db.Float, nullable=False)
+    
+    # Novos campos
+    valor_total = db.Column(db.Float, nullable=False) # Valor bruto da venda
+    valor_liquido = db.Column(db.Float, nullable=True) # Valor após desconto da taxa
+    taxa_maquininha = db.Column(db.Float, default=0.0) # Valor em R$ da taxa descontada
+    cobrar_taxa = db.Column(db.Boolean, default=False) # Se foi marcado o checkbox
+    
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     usuario = db.relationship('Usuario', backref=db.backref('vendas', lazy=True))
+    
+    # Relacionamento com Cliente
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True)
+    cliente = db.relationship('Cliente', backref=db.backref('compras', lazy=True))
 
 class VendaItem(db.Model):
     __tablename__ = 'venda_itens'

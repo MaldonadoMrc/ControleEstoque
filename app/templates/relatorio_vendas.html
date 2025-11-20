@@ -1,0 +1,91 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Relatório de Vendas{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Resumo das Vendas</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Valor Total Bruto</h5>
+                        <p class="card-text fs-4">R$ {{ total_bruto | round(2) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card text-white bg-info mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Valor Total Líquido</h5>
+                        <p class="card-text fs-4">R$ {{ total_liquido | round(2) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title">Todas as Vendas</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID da Venda</th>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Valor Bruto</th>
+                    <th>Taxa</th>
+                    <th>Valor Líquido</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venda in vendas %}
+                <tr>
+                    <td>{{ venda.id }}</td>
+                    <td>{{ venda.data_hora | hora_local }}</td>
+                    <td>{{ venda.cliente.nome if venda.cliente else 'N/A' }}</td>
+                    <td>R$ {{ venda.valor_total | round(2) }}</td>
+                    <td>R$ {{ venda.taxa_maquininha | round(2) }}</td>
+                    <td>R$ {{ venda.valor_liquido | round(2) }}</td>
+                    <td>
+                        <a href="{{ url_for('main.detalhes_venda', venda_id=venda.id) }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-eye"></i> Detalhes
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center mt-4">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('main.relatorio_vendas', page=pagination.prev_num) }}">Anterior</a>
+        </li>
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('main.relatorio_vendas', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('main.relatorio_vendas', page=pagination.next_num) }}">Próxima</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

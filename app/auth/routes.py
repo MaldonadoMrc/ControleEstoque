@@ -3,9 +3,9 @@ from app import db
 from .forms import LoginForm, RegistroForm
 from flask_login import login_user
 from flask_login import login_user, logout_user, login_required, current_user
-auth_bp = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
+from . import auth_bp
 from app.models import Usuario, Funcao
-main_bp = Blueprint('main', __name__, template_folder='templates/main', static_folder='static')
+
 @auth_bp.route('/logout')
 @login_required # Só permite acesso a usuários que estão logados
 def logout():
@@ -19,7 +19,7 @@ def registro():
     form = RegistroForm()
     if form.validate_on_submit():
         # Cria um novo usuário com os dados do formulário
-        funcao_padrao = Funcao.query.filter_by(nome='Admin').first()
+        funcao_padrao = Funcao.query.filter_by(nome='Usuario').first()
         if not funcao_padrao:
             flash('Função padrão "Usuario" não encontrada. Por favor, crie uma função antes de registrar um usuário.', 'danger')
             return redirect(url_for('auth.registro'))

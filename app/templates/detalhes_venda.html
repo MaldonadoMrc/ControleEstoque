@@ -1,0 +1,58 @@
+{% extends "dashboard_base.html" %}
+
+{% block dashboard_title %}Detalhes da Venda #{{ venda.id }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Informações da Venda</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>ID da Venda:</strong> {{ venda.id }}</p>
+                <p><strong>Data e Hora:</strong> {{ venda.data_hora | hora_local }}</p>
+                <p><strong>Cliente:</strong> {{ venda.cliente.nome if venda.cliente else 'N/A' }}</p>
+                <p><strong>Vendedor:</strong> {{ venda.usuario.nome }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Valor Bruto:</strong> R$ {{ venda.valor_total | round(2) }}</p>
+                <p><strong>Taxa da Maquininha:</strong> R$ {{ venda.taxa_maquininha | round(2) }}</p>
+                <p><strong>Valor Líquido:</strong> R$ {{ venda.valor_liquido | round(2) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title">Itens da Venda</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Preço Unitário</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in venda.itens %}
+                <tr>
+                    <td>{{ item.produto.nome }}</td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>R$ {{ item.preco_unitario | round(2) }}</td>
+                    <td>R$ {{ (item.quantidade * item.preco_unitario) | round(2) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('main.relatorio_vendas') }}" class="btn btn-secondary">Voltar para o Relatório</a>
+</div>
+{% endblock %}

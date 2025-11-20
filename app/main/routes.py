@@ -103,9 +103,15 @@ def deletar_produto(produto_id):
 @main_bp.route('/')
 @login_required
 def home():
-    total_produtos_distintos = db.session.query(func.count(Produto.id)).scalar()
-    total_itens_estoque = db.session.query(func.sum(Produto.quantidade)).scalar() or 0
-    valor_total_estoque = db.session.query(func.sum(Produto.preco * Produto.quantidade)).scalar() or 0
+    query_results = db.session.query(
+        func.count(Produto.id),
+        func.sum(Produto.quantidade),
+        func.sum(Produto.preco * Produto.quantidade),
+    ).one()
+
+    total_produtos_distintos = query_results[0]
+    total_itens_estoque = query_results[1] or 0
+    valor_total_estoque = query_results[2] or 0
     total_usuarios = db.session.query(func.count(Usuario.id)).scalar()
     produtos_baixo_estoque = Produto.query.order_by(Produto.quantidade.asc()).limit(5).all()
 
@@ -201,7 +207,6 @@ def movimentar_estoque(produto_id):
             
         try:
             db.session.add(nova_movimentacao)
-            db.session.add(produto)
             db.session.commit()
             flash(f'{tipo_movimentacao} de {quantidade_mov} unidade(s) do produto "{produto.nome}" registrada com sucesso!', 'success')
         except Exception as e:
@@ -234,10 +239,15 @@ def historico_produto(produto_id):
 @main_bp.route('/fornecedores')
 @login_required
 def listar_fornecedores():
-    fornecedores = Fornecedor.query.order_by(Fornecedor.nome).all()
+    page = request.args.get('page', 1, type=int)
+    pagination = Fornecedor.query.order_by(Fornecedor.nome).paginate(
+        page=page, per_page=5, error_out=False
+    )
+    fornecedores = pagination.items
     return render_template('listar_fornecedores.html', 
                            fornecedores=fornecedores, 
-                           title="Fornecedores")
+                           title="Fornecedores",
+                           pagination=pagination)
 
 @main_bp.route('/fornecedor/adicionar', methods=['GET', 'POST'])
 @login_required
@@ -298,14 +308,19 @@ def deletar_fornecedor(fornecedor_id):
 @main_bp.route('/clientes')
 @login_required
 def listar_clientes():
-    clientes = Cliente.query.order_by(Cliente.nome).all()
+    page = request.args.get('page', 1, type=int)
+    pagination = Cliente.query.order_by(Cliente.nome).paginate(
+        page=page, per_page=5, error_out=False
+    )
+    clientes = pagination.items
     return render_template('listar_clientes.html', 
                            clientes=clientes, 
-                           title="Clientes")
+                           title="Clientes",
+                           pagination=pagination)
 
 @main_bp.route('/cliente/adicionar', methods=['GET', 'POST'])
 @login_required
-@permission_required('Admin, Gerente')
+@permission_required('Admin', 'Gerente')
 def adicionar_cliente():
     form = ClienteForm()
     if form.validate_on_submit():
@@ -359,16 +374,21 @@ def deletar_cliente(cliente_id):
 @login_required
 def listar_os():
     """Exibe a lista de todas as Ordens de Serviço."""
+    page = request.args.get('page', 1, type=int)
     # .options(db.joinedload(...)) é uma otimização para carregar os dados relacionados
     # de uma vez só, evitando múltiplas queries ao banco.
-    ordens = OrdemServico.query.options(
+    pagination = OrdemServico.query.options(
         db.joinedload(OrdemServico.cliente), 
         db.joinedload(OrdemServico.tecnico)
-    ).order_by(OrdemServico.data_abertura.desc()).all()
+    ).order_by(OrdemServico.data_abertura.desc()).paginate(
+        page=page, per_page=5, error_out=False
+    )
+    ordens = pagination.items
     
     return render_template('listar_os.html', 
                            ordens=ordens, 
-                           title="Ordens de Serviço")
+                           title="Ordens de Serviço",
+                           pagination=pagination)
 
 @main_bp.route('/os/adicionar', methods=['GET', 'POST'])
 @login_required
@@ -438,53 +458,133 @@ def api_produtos():
     ]
     return jsonify(lista_produtos)
 
-# Rota para a página de vendas
+# Em app/main/routes.py
+
+# ... imports ... (adicione Venda e VendaItem se faltar)
+
 @main_bp.route('/venda/registrar', methods=['GET', 'POST'])
 @login_required
-@permission_required('Admin', 'Gerente') # Defina quem pode vender
+@permission_required('Admin', 'Gerente')
 def registrar_venda():
     form = VendaForm()
     if form.validate_on_submit():
         try:
-            # Pega a string JSON do formulário e converte de volta para uma lista Python
-            itens_do_carrinho = json.loads(form.itens_venda.data)
-
-            if not itens_do_carrinho:
-                flash('O carrinho não pode estar vazio para finalizar a venda.', 'warning')
+            # 1. Validação inicial dos dados do carrinho
+            produtos_selecionados_json = form.itens_venda.data
+            if not produtos_selecionados_json:
+                flash('O carrinho não pode estar vazio.', 'danger')
                 return redirect(url_for('main.registrar_venda'))
 
-            valor_total_venda = 0
-            nova_venda = Venda(usuario_id=current_user.id, valor_total=0) # Cria a venda
+            itens_do_carrinho = json.loads(produtos_selecionados_json)
+            if not itens_do_carrinho:
+                flash('O carrinho não pode estar vazio.', 'danger')
+                return redirect(url_for('main.registrar_venda'))
+
+            # --- Otimização e Cálculo Prévio ---
+            # 2. Buscar todos os produtos de uma vez para otimizar a consulta
+            product_ids = [item['id'] for item in itens_do_carrinho]
+            products = Produto.query.filter(Produto.id.in_(product_ids)).all()
+            product_map = {p.id: p for p in products}
+            
+            # 3. Calcular o valor total e validar o estoque ANTES de criar a venda
+            valor_total_bruto = 0
+            for item_carrinho in itens_do_carrinho:
+                produto = product_map.get(int(item_carrinho['id']))
+                qtd = int(item_carrinho['quantidade'])
+                
+                if not produto:
+                    raise Exception(f"Produto com ID {item_carrinho['id']} não encontrado.")
+                if produto.quantidade < qtd:
+                    raise Exception(f"Estoque insuficiente para o produto '{produto.nome}'. Disponível: {produto.quantidade}, Pedido: {qtd}.")
+                
+                valor_total_bruto += (qtd * produto.preco)
+
+            # 4. Calcular taxas e valor líquido
+            valor_taxa_reais = 0.0
+            if form.cobrar_taxa.data and form.percentual_taxa.data is not None:
+                percentual = float(form.percentual_taxa.data)
+                valor_taxa_reais = valor_total_bruto * (percentual / 100)
+            
+            valor_liquido = valor_total_bruto - valor_taxa_reais
+            # --- Fim do Cálculo ---
+
+            # 5. Criar o objeto da venda com todos os valores já calculados
+            nova_venda = Venda(
+                usuario_id=current_user.id,
+                cliente=form.cliente.data,
+                cobrar_taxa=form.cobrar_taxa.data,
+                valor_total=valor_total_bruto,
+                taxa_maquininha=valor_taxa_reais,
+                valor_liquido=valor_liquido
+            )
             db.session.add(nova_venda)
 
+            # 6. Processar os itens, atualizar estoque e criar VendaItem
+            # O flush aqui garante que `nova_venda` tenha um ID antes de ser associada
+            db.session.flush()
+
             for item_carrinho in itens_do_carrinho:
-                produto = Produto.query.get(item_carrinho['id'])
-                quantidade_vendida = int(item_carrinho['quantidade'])
+                produto = product_map.get(int(item_carrinho['id']))
+                qtd = int(item_carrinho['quantidade'])
 
-                if not produto or produto.quantidade < quantidade_vendida:
-                    raise Exception(f"Estoque insuficiente para o produto {item_carrinho['nome']}.")
-
-                # Abate do estoque
-                produto.quantidade -= quantidade_vendida
-
-                # Cria o item da venda
-                novo_item_venda = VendaItem(
-                    venda=nova_venda,
+                produto.quantidade -= qtd
+                
+                item_db = VendaItem(
+                    venda_id=nova_venda.id,
                     produto_id=produto.id,
-                    quantidade=quantidade_vendida,
+                    quantidade=qtd,
                     preco_unitario=produto.preco
                 )
-                valor_total_venda += quantidade_vendida * produto.preco
-                db.session.add(novo_item_venda)
+                db.session.add(item_db)
 
-            # Atualiza o valor total na venda
-            nova_venda.valor_total = valor_total_venda
+            # 7. Commit final da transação
             db.session.commit()
-            flash('Venda registrada com sucesso!', 'success')
-            return redirect(url_for('main.home'))
+            flash(f'Venda #{nova_venda.id} realizada com sucesso! Valor Líquido: R$ {valor_liquido:.2f}', 'success')
+            return redirect(url_for('main.detalhes_venda', venda_id=nova_venda.id))
 
+        except json.JSONDecodeError:
+            db.session.rollback()
+            flash('Erro ao processar os itens do carrinho. Formato inválido.', 'danger')
         except Exception as e:
-            db.session.rollback() # Desfaz tudo se der algum erro
-            flash(f'Erro ao processar a venda: {e}', 'danger')
+            db.session.rollback()
+            flash(f'Erro ao registrar a venda: {e}', 'danger')
+            
+    # Trata erros de validação do formulário
+    elif request.method == 'POST':
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Erro no campo '{getattr(form, field).label.text}': {error}", 'warning')
 
-    return render_template('registrar_venda.html', title='Registrar Venda', form=form)
+    return render_template('registrar_venda.html', title='Nova Venda', form=form)
+
+# --- NOVAS ROTAS ---
+
+@main_bp.route('/vendas/relatorio')
+@login_required
+def relatorio_vendas():
+    page = request.args.get('page', 1, type=int)
+    # Busca todas as vendas, ordenadas da mais recente para a mais antiga
+    pagination = Venda.query.options(
+        db.joinedload(Venda.cliente),
+        db.joinedload(Venda.usuario)
+    ).order_by(Venda.data_hora.desc()).paginate(
+        page=page, per_page=5, error_out=False
+    )
+    vendas = pagination.items
+    
+    # Cálculos simples para o resumo
+    total_bruto = sum(v.valor_total for v in vendas)
+    total_liquido = sum(v.valor_liquido if v.valor_liquido else v.valor_total for v in vendas)
+    
+    return render_template('relatorio_vendas.html', 
+                           title='Relatório de Vendas', 
+                           vendas=vendas,
+                           total_bruto=total_bruto,
+                           total_liquido=total_liquido,
+                           pagination=pagination)
+
+@main_bp.route('/venda/<int:venda_id>')
+@login_required
+def detalhes_venda(venda_id):
+    venda = Venda.query.get_or_404(venda_id)
+    return render_template('detalhes_venda.html', title=f'Venda #{venda.id}', venda=venda)

@@ -3,140 +3,171 @@
 {% block dashboard_title %}Registrar Nova Venda{% endblock %}
 
 {% block dashboard_content %}
-<div class="row">
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">1. Adicionar Produtos ao Carrinho</h5>
-                <hr>
+<form id="formVenda" method="POST" action="{{ url_for('main.registrar_venda') }}">
+    {{ form.hidden_tag() }}
+    {{ form.itens_venda(id="itens_venda_input") }}
 
-                <div class="mb-3">
-                    <label for="buscaProduto" class="form-label">Buscar Produto por Nome</label>
-                    <input type="text" id="buscaProduto" class="form-control" placeholder="Digite para buscar...">
-                    <div id="listaResultados" class="list-group mt-2"></div>
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">1. Dados do Cliente</h5>
+                    <div class="mb-3">
+                        {{ form.cliente.label(class="form-label") }}
+                        {{ form.cliente(class="form-select") }}
+                    </div>
                 </div>
+            </div>
 
-                <div id="detalhesProduto" class="d-none">
-                    <h6>Produto Selecionado: <span id="nomeProdutoSelecionado" class="text-primary"></span></h6>
-                    <p class="mb-1">Estoque atual: <strong id="estoqueAtual"></strong></p>
-                    <p>Preço unitário: R$ <strong id="precoUnitario"></strong></p>
-                    
-                    <div class="row align-items-end">
-                        <div class="col-sm-4">
-                            <label for="quantidadeVenda" class="form-label">Quantidade</label>
-                            <input type="number" id="quantidadeVenda" class="form-control" value="1" min="1">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">2. Adicionar Produtos</h5>
+                    <div class="mb-3">
+                        <input type="text" id="buscaProduto" class="form-control" placeholder="Buscar produto...">
+                        <div id="listaResultados" class="list-group mt-2"></div>
+                    </div>
+
+                    <div id="detalhesProduto" class="d-none border p-3 rounded bg-light">
+                        <h6 id="nomeProdutoSelecionado" class="text-primary fw-bold"></h6>
+                        <div class="row">
+                            <div class="col-6">Estoque: <strong id="estoqueAtual"></strong></div>
+                            <div class="col-6">Preço: R$ <strong id="precoUnitario"></strong></div>
                         </div>
-                        <div class="col-sm-8">
-                            <button id="btnAdicionarAoCarrinho" class="btn btn-success w-100">Adicionar ao Carrinho &rarr;</button>
+                        <div class="row mt-2 align-items-end">
+                            <div class="col-4">
+                                <label>Qtd:</label>
+                                <input type="number" id="quantidadeVenda" class="form-control" value="1" min="1">
+                            </div>
+                            <div class="col-8">
+                                <button type="button" id="btnAdicionarAoCarrinho" class="btn btn-success w-100">Incluir</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
-    </div>
 
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">2. Resumo da Venda</h5>
-                <hr>
-                
-                <form id="formVenda" method="POST" action="{{ url_for('main.registrar_venda') }}">
-                    {{ form.hidden_tag() }}
-                    <input type="hidden" name="itens_venda" id="itens_venda_input">
-
-                    <ul id="carrinhoLista" class="list-group mb-3">
-                        <li id="carrinhoVazio" class="list-group-item text-center text-muted">
-                            O carrinho está vazio.
-                        </li>
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-dark text-white">Resumo da Venda</div>
+                <div class="card-body">
+                    <ul id="carrinhoLista" class="list-group list-group-flush mb-3" style="max-height: 300px; overflow-y: auto;">
+                        <li id="carrinhoVazio" class="list-group-item text-center text-muted">Carrinho vazio</li>
                     </ul>
 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">Total:</h6>
-                        <h4 id="valorTotal" class="mb-0 fw-bold">R$ 0.00</h4>
-                    </div>
-                    
                     <hr>
 
-                    <div class="d-grid">
-                        <button type="submit" id="btnFinalizarVenda" class="btn btn-primary btn-lg" disabled>Finalizar Venda</button>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Subtotal:</strong></div>
+                        <div class="col-6 text-end"><span id="lblSubtotal">R$ 0.00</span></div>
                     </div>
-                </form>
+
+                    <div class="mb-3 bg-light p-2 rounded border">
+                        <div class="form-check form-switch">
+                            {{ form.cobrar_taxa(class="form-check-input", id="chkTaxa") }}
+                            <label class="form-check-label" for="chkTaxa">Aplicar Taxa de Maquininha</label>
+                        </div>
+                        
+                        <div id="divTaxaInput" class="mt-2 d-none">
+                            <label class="small">Percentual da Taxa (%):</label>
+                            {{ form.percentual_taxa(class="form-control form-control-sm", id="inputTaxaPercentual", placeholder="Ex: 4.5") }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-2 text-danger" id="divValorTaxa" style="display:none;">
+                        <div class="col-6">Desconto Taxa:</div>
+                        <div class="col-6 text-end">- <span id="lblValorTaxa">R$ 0.00</span></div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-6"><h5 class="mb-0">Valor Líquido:</h5><small class="text-muted">(A Receber)</small></div>
+                        <div class="col-6 text-end"><h4 id="lblTotalLiquido" class="fw-bold text-success mb-0">R$ 0.00</h4></div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg", id="btnFinalizar", disabled=true) }}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</form>
 {% endblock %}
+
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Referências aos elementos do DOM
-    const buscaInput = document.getElementById('buscaProduto');
-    const resultadosDiv = document.getElementById('listaResultados');
+    const formVenda = document.getElementById('formVenda');
+    const buscaProdutoInput = document.getElementById('buscaProduto');
+    const listaResultados = document.getElementById('listaResultados');
     const detalhesProdutoDiv = document.getElementById('detalhesProduto');
-    const quantidadeInput = document.getElementById('quantidadeVenda');
-    const btnAdicionar = document.getElementById('btnAdicionarAoCarrinho');
+    const nomeProdutoSelecionado = document.getElementById('nomeProdutoSelecionado');
+    const estoqueAtual = document.getElementById('estoqueAtual');
+    const precoUnitario = document.getElementById('precoUnitario');
+    const quantidadeVendaInput = document.getElementById('quantidadeVenda');
+    const btnAdicionarAoCarrinho = document.getElementById('btnAdicionarAoCarrinho');
     const carrinhoLista = document.getElementById('carrinhoLista');
     const carrinhoVazio = document.getElementById('carrinhoVazio');
-    const valorTotalEl = document.getElementById('valorTotal');
-    const btnFinalizarVenda = document.getElementById('btnFinalizarVenda');
-    const formVenda = document.getElementById('formVenda');
-    const itensVendaInput = document.getElementById('itens_venda_input');
+    const itensVendaInput = document.querySelector('input[name="itens_venda"]');
+    const btnFinalizar = document.getElementById('btnFinalizar');
 
+    let carrinho = [];
     let produtoSelecionado = null;
-    let carrinho = []; // Array para guardar os itens da venda
 
-    // Função para buscar produtos dinamicamente
-    buscaInput.addEventListener('keyup', async function () {
-        const termo = buscaInput.value;
+    // Log para depuração
+    formVenda.addEventListener('submit', function(e) {
+        console.log('Valor de itens_venda no momento do submit:', itensVendaInput.value);
+    });
+
+    // Função para buscar produtos
+    buscaProdutoInput.addEventListener('input', function () {
+        const termo = this.value;
         if (termo.length < 2) {
-            resultadosDiv.innerHTML = '';
+            listaResultados.innerHTML = '';
             return;
         }
-        // No seu backend, você precisará criar uma rota /api/produtos?termo=...
-        const response = await fetch(`/api/produtos?termo=${termo}`);
-        const produtos = await response.json();
-        
-        resultadosDiv.innerHTML = '';
-        produtos.forEach(p => {
-            const item = document.createElement('a');
-            item.href = '#';
-            item.className = 'list-group-item list-group-item-action';
-            item.textContent = `${p.nome} (Estoque: ${p.quantidade})`;
-            item.dataset.produto = JSON.stringify(p); // Guarda o objeto produto
-            resultadosDiv.appendChild(item);
-        });
+
+        fetch(`{{ url_for('main.api_produtos') }}?termo=${termo}`)
+            .then(response => response.json())
+            .then(data => {
+                listaResultados.innerHTML = '';
+                data.forEach(produto => {
+                    const item = document.createElement('a');
+                    item.href = '#';
+                    item.classList.add('list-group-item', 'list-group-item-action');
+                    item.textContent = produto.nome;
+                    item.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        selecionarProduto(produto);
+                    });
+                    listaResultados.appendChild(item);
+                });
+            });
     });
 
-    // Função para selecionar um produto da lista de busca
-    resultadosDiv.addEventListener('click', function (e) {
-        if (e.target && e.target.tagName === 'A') {
-            e.preventDefault();
-            produtoSelecionado = JSON.parse(e.target.dataset.produto);
-            
-            document.getElementById('nomeProdutoSelecionado').textContent = produtoSelecionado.nome;
-            document.getElementById('estoqueAtual').textContent = produtoSelecionado.quantidade;
-            document.getElementById('precoUnitario').textContent = produtoSelecionado.preco.toFixed(2);
-            quantidadeInput.max = produtoSelecionado.quantidade;
-            
-            detalhesProdutoDiv.classList.remove('d-none');
-            resultadosDiv.innerHTML = '';
-            buscaInput.value = '';
-        }
-    });
+    // Função para selecionar um produto
+    function selecionarProduto(produto) {
+        produtoSelecionado = produto;
+        nomeProdutoSelecionado.textContent = produto.nome;
+        estoqueAtual.textContent = produto.quantidade;
+        precoUnitario.textContent = produto.preco.toFixed(2);
+        quantidadeVendaInput.max = produto.quantidade;
+        detalhesProdutoDiv.classList.remove('d-none');
+        listaResultados.innerHTML = '';
+        buscaProdutoInput.value = '';
+    }
 
-    // Função para adicionar o produto selecionado ao carrinho
-    btnAdicionar.addEventListener('click', function() {
+    // Função para adicionar ao carrinho
+    btnAdicionarAoCarrinho.addEventListener('click', function () {
         if (!produtoSelecionado) return;
 
-        const quantidade = parseInt(quantidadeInput.value);
+        const quantidade = parseInt(quantidadeVendaInput.value);
         if (quantidade <= 0 || quantidade > produtoSelecionado.quantidade) {
-            alert('Quantidade inválida ou maior que o estoque disponível.');
+            alert('Quantidade inválida.');
             return;
         }
 
-        // Verifica se o produto já está no carrinho
+        // Verifica se o item já está no carrinho
         const itemExistente = carrinho.find(item => item.id === produtoSelecionado.id);
         if (itemExistente) {
             itemExistente.quantidade += quantidade;
@@ -148,56 +179,88 @@ document.addEventListener('DOMContentLoaded', function () {
                 quantidade: quantidade
             });
         }
-        
+
         atualizarCarrinho();
-        produtoSelecionado = null;
         detalhesProdutoDiv.classList.add('d-none');
+        produtoSelecionado = null;
     });
 
-    // Função para renderizar o carrinho na tela
+    // Função para atualizar o carrinho
     function atualizarCarrinho() {
         carrinhoLista.innerHTML = '';
-        let total = 0;
-
         if (carrinho.length === 0) {
             carrinhoLista.appendChild(carrinhoVazio);
-            btnFinalizarVenda.disabled = true;
         } else {
             carrinho.forEach((item, index) => {
                 const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
                 li.innerHTML = `
-                    <div>
-                        ${item.nome}
-                        <small class="d-block text-muted">${item.quantidade} x R$ ${item.preco.toFixed(2)}</small>
-                    </div>
-                    <div>
-                        <span class="fw-bold me-3">R$ ${(item.quantidade * item.preco).toFixed(2)}</span>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-remover" data-index="${index}">&times;</button>
-                    </div>
+                    <span>${item.nome} (Qtd: ${item.quantidade})</span>
+                    <button type="button" class="btn btn-danger btn-sm" data-index="${index}">Remover</button>
                 `;
                 carrinhoLista.appendChild(li);
-                total += item.quantidade * item.preco;
             });
-            btnFinalizarVenda.disabled = false;
         }
-        valorTotalEl.textContent = `R$ ${total.toFixed(2)}`;
+
+        // Atualiza o input hidden com os dados do carrinho
+        itensVendaInput.value = JSON.stringify(carrinho);
+
+        // Habilita/desabilita o botão de finalizar
+        btnFinalizar.disabled = carrinho.length === 0;
+
+        atualizarTotais();
     }
 
-    // Função para remover um item do carrinho
-    carrinhoLista.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('btn-remover')) {
-            const index = e.target.dataset.index;
+    // Event listener para remover item do carrinho
+    carrinhoLista.addEventListener('click', function (e) {
+        if (e.target.tagName === 'BUTTON' && e.target.dataset.index) {
+            const index = parseInt(e.target.dataset.index);
             carrinho.splice(index, 1);
             atualizarCarrinho();
         }
     });
 
-    // Prepara o formulário para envio
-    formVenda.addEventListener('submit', function() {
-        // Converte o array do carrinho em uma string JSON para enviar ao backend
-        itensVendaInput.value = JSON.stringify(carrinho);
-    });
+    // Lógica de cálculo financeiro
+    const chkTaxa = document.getElementById('chkTaxa');
+    const divTaxaInput = document.getElementById('divTaxaInput');
+    const inputTaxaPercentual = document.getElementById('inputTaxaPercentual');
+    const divValorTaxa = document.getElementById('divValorTaxa');
+    const lblSubtotal = document.getElementById('lblSubtotal');
+    const lblValorTaxa = document.getElementById('lblValorTaxa');
+    const lblTotalLiquido = document.getElementById('lblTotalLiquido');
+
+    function atualizarTotais() {
+        let totalBruto = 0;
+        carrinho.forEach(item => {
+            totalBruto += item.quantidade * item.preco;
+        });
+
+        let valorTaxa = 0;
+        if (chkTaxa.checked) {
+            const percentual = parseFloat(inputTaxaPercentual.value) || 0;
+            valorTaxa = totalBruto * (percentual / 100);
+        }
+
+        const totalLiquido = totalBruto - valorTaxa;
+
+        lblSubtotal.textContent = `R$ ${totalBruto.toFixed(2)}`;
+        lblValorTaxa.textContent = `R$ ${valorTaxa.toFixed(2)}`;
+        lblTotalLiquido.textContent = `R$ ${totalLiquido.toFixed(2)}`;
+
+        if (chkTaxa.checked) {
+            divTaxaInput.classList.remove('d-none');
+            divValorTaxa.style.display = 'flex';
+        } else {
+            divTaxaInput.classList.add('d-none');
+            divValorTaxa.style.display = 'none';
+        }
+    }
+
+    chkTaxa.addEventListener('change', atualizarTotais);
+    inputTaxaPercentual.addEventListener('input', atualizarTotais);
+
+    // Inicializa o carrinho
+    atualizarCarrinho();
 });
 </script>
 {% endblock %}

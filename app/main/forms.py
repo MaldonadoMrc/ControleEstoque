@@ -6,7 +6,7 @@ from wtforms_sqlalchemy.fields import QuerySelectField
 from app.models import Funcao, Fornecedor, Estado, Cliente, Usuario
 from sqlalchemy import func
 from datetime import datetime
-from wtforms import HiddenField
+from wtforms import HiddenField, BooleanField
 
 class FornecedorForm(FlaskForm):
     nome = StringField('Nome da Empresa', validators=[DataRequired()])
@@ -166,8 +166,32 @@ class OrdemServicoForm(FlaskForm):
 
 
 
+# Em app/main/forms.py
+
+# ... imports ... (certifique-se de importar Cliente e query_cliente se não tiver)
+
+# Função auxiliar para popular o select de clientes
+def query_clientes_venda():
+    return Cliente.query.order_by(Cliente.nome)
+
 class VendaForm(FlaskForm):
-    itens_venda = HiddenField('Itens da Venda', validators=[DataRequired()])
+    cliente = QuerySelectField(
+        'Cliente',
+        query_factory=query_clientes_venda,
+        get_label='nome',
+        allow_blank=False, # Obriga a selecionar um cliente
+        blank_text='-- Selecione o Cliente --',
+        validators=[DataRequired(message="Selecione um cliente.")]
+    )
+    
+    cobrar_taxa = BooleanField('Cobrar Taxa de Maquininha?')
+    
+    # Campo para o usuário digitar a % da taxa (ex: 4.5%)
+    percentual_taxa = FloatField('Taxa (%)', default=0.0, validators=[Optional()])
+    
+    # O itens_venda continua igual
+    itens_venda = HiddenField('Itens da Venda')
+    
     submit = SubmitField('Finalizar Venda')
 
 
